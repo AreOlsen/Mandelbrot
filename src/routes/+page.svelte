@@ -17,6 +17,31 @@
         return iterationArray;
     }
 
+    function pixelIterationCount(px,py){
+        let x0 = 2.47*(px/width)-2.00; 
+        let y0 = 2.24*(py/height)-1.12;
+        let x = 0, y= 0;
+        let iteration = 0;
+        let x2=0, y2=0, w = 0;
+        while((x2+y2)<=4 && (iteration<maxIterations)){
+            x=x2-y2+x0;
+            y=w-x2-y2+y0;
+            x2=x*x;
+            y2=y*y;
+            w=(x+y)*(x+y);
+            iteration++;
+        }
+        return iteration;
+    }
+
+    const getColorIndicesForCoord = (x, y, width) => {
+        const red = y * (width * 4) + x * 4;
+        return [red, red + 1, red + 2, red + 3];
+    };
+
+    /*
+    HISTOGRAM COLOURING.
+
     function numIterationsPerPixel(iterationCounts){
         let numIterationsPerPixel = new Array(maxIterations+1).fill(0);
         for(let x = 0; x < width; x++){
@@ -49,42 +74,6 @@
         }
         return hue;
     }
-
-    function pixelIterationCount(px,py){
-        let x0 = 2.47*(px/width)-2.00; 
-        let y0 = 2.24*(py/height)-1.12;
-        let x = 0, y= 0;
-        let iteration = 0;
-        let x2=0, y2=0, w = 0;
-        while((x2+y2)<=4 && (iteration<maxIterations)){
-            x=x2-y2+x0;
-            y=w-x2-y2+y0;
-            x2=x*x;
-            y2=y*y;
-            w=(x+y)*(x+y);
-            iteration++;
-        }
-        return iteration;
-    }
-
-
-    const getColorIndicesForCoord = (x, y, width) => {
-        const red = y * (width * 4) + x * 4;
-        return [red, red + 1, red + 2, red + 3];
-    };
-
-
-    import { afterUpdate, onMount } from "svelte";
-    let canvasCtx;
-    onMount(()=>{
-        canvasCtx = canvasRef.getContext('2d');
-        generateMandelbrotImage();
-    });
-
-    afterUpdate(()=>{
-        generateMandelbrotImage();
-    })
-
     function plotMandelToImageData(width, height, hue){
         if(canvasCtx != undefined){
             var imagedata = canvasCtx.createImageData(width, height);
@@ -111,21 +100,26 @@
             }
         }
 
+    */
+    import { afterUpdate, onMount } from "svelte";
+    let canvasCtx;
+    onMount(()=>{
+        canvasCtx = canvasRef.getContext('2d');
+        generateMandelbrotImage();
+    });
+
+    afterUpdate(()=>{
+        generateMandelbrotImage();
+    })
+
+
     function plotMandelToImageDataSimple(width,height, itArray){
         if(canvasCtx != undefined){
             var imagedata = canvasCtx.createImageData(width, height);
-            let highestIterationNumber = 0;
-            for(let x = 0; x<width; x++){
-                for(let y = 0; y<height;y++){
-                    if(itArray[x][y]>highestIterationNumber){
-                        highestIterationNumber=itArray[x][y];
-                    }
-                }
-            }
             for(let x = 0; x<width; x++){
                 for(let y = 0; y<height;y++){
                     let [redIndex, greenIndex, blueIndex, alphaIndex] = getColorIndicesForCoord(x,y,width);
-                    let color = getColorFromPalette((itArray[x][y]/highestIterationNumber)*255);
+                    let color = getColorFromPalette((itArray[x][y]/maxIterations)*255);
                     imagedata.data[redIndex]=color[0];
                     imagedata.data[greenIndex]=color[1];
                     imagedata.data[blueIndex]=color[2];
@@ -172,7 +166,6 @@
             <ul>
                 <li>Zoom in and zoom out</li>
                 <li>Move around on screen</li>
-                <li>Histogram colouring instead of iteration colouring. </li>
             </ul>
         </div>
         <a href="https://github.com/AreOlsen" class="flex flex-row gap-5"
