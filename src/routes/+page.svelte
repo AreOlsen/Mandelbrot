@@ -1,8 +1,10 @@
 <script>
     let maxIterations = 50;
-    let width = 650;
-    let height = 500;
+    let width = 800;
+    let height = 600;
     let canvasRef;
+
+
 
     function initIterationArray(){
         let iterationArray = new Array(width).fill(new Array(height).fill(0));
@@ -17,18 +19,21 @@
         return iterationArray;
     }
 
+    /*
+        Mandelbrot is similiar to Julia sets, just that Mandelbrot uses the C as a complex number made of x and y positions of the, in this case, pixel
+        while Julia Sets just use some predefined static value. 
+    */
     function pixelIterationCount(px,py){
         let x0 = 2.47*(px/width)-2.00; 
         let y0 = 2.24*(py/height)-1.12;
         let x = 0, y= 0;
         let iteration = 0;
-        let x2=0, y2=0, w = 0;
+        let x2=0, y2=0;
         while((x2+y2)<=4 && (iteration<maxIterations)){
+            y=2*x*y+y0;
             x=x2-y2+x0;
-            y=w-x2-y2+y0;
             x2=x*x;
             y2=y*y;
-            w=(x+y)*(x+y);
             iteration++;
         }
         return iteration;
@@ -39,68 +44,6 @@
         return [red, red + 1, red + 2, red + 3];
     };
 
-    /*
-    HISTOGRAM COLOURING.
-
-    function numIterationsPerPixel(iterationCounts){
-        let numIterationsPerPixel = new Array(maxIterations+1).fill(0);
-        for(let x = 0; x < width; x++){
-            for(let y = 0; y < height; y++){
-                let i = iterationCounts[x][y];
-                numIterationsPerPixel[i]++;
-            }
-        }
-
-        return numIterationsPerPixel;
-    }
-
-    function totalValue(numIterations){
-        let total = 0;
-        for(let i = 0; i <= maxIterations; i++){
-            total+=numIterations[i];
-        } 
-        return total;
-    }
-
-    function hue(iterationCounts, numIterations, total){
-        let hue = Array(width).fill(new Array(height).fill(0));
-        for(let x = 0; x < width; x++){
-            for(let y = 0; y < height; y++){
-                let it = iterationCounts[x][y];
-                for(let i = 0; i <= it; i++){
-                    hue[x][y]+=(numIterations[i] / total);
-                }
-            }
-        }
-        return hue;
-    }
-    function plotMandelToImageData(width, height, hue){
-        if(canvasCtx != undefined){
-            var imagedata = canvasCtx.createImageData(width, height);
-            let highestHue = 0;
-            for(let x1 = 0; x1 < width;x1++){
-                for(let y1 = 0; y1<height;y1++){
-                    let hueCur = hue[x1][y1];
-                    if(hueCur>highestHue){
-                        highestHue=hueCur;
-                    }
-                }
-            }
-            for(let x = 0; x < width; x++){
-                for(let y = 0; y < height; y++){
-                    let [redIndex, greenIndex, blueIndex, alphaIndex] = getColorIndicesForCoord(x,y,width);
-                    let color = getColorFromPalette((hue[x][y]/highestHue)*255);
-                    imagedata.data[redIndex]=color[0];
-                    imagedata.data[greenIndex]=color[1];
-                    imagedata.data[blueIndex]=color[2];
-                    imagedata.data[alphaIndex]=color[3];
-                    }
-                }
-                canvasCtx.putImageData(imagedata,0,0);
-            }
-        }
-
-    */
     import { afterUpdate, onMount } from "svelte";
     let canvasCtx;
     onMount(()=>{
@@ -110,7 +53,7 @@
 
     afterUpdate(()=>{
         generateMandelbrotImage();
-    })
+    });
 
 
     function plotMandelToImageDataSimple(width,height, itArray){
@@ -119,7 +62,7 @@
             for(let x = 0; x<width; x++){
                 for(let y = 0; y<height;y++){
                     let [redIndex, greenIndex, blueIndex, alphaIndex] = getColorIndicesForCoord(x,y,width);
-                    let color = getColorFromPalette((itArray[x][y]/maxIterations)*255);
+                    let color = getColorFromPalette((itArray[x][y]/maxIterations));
                     imagedata.data[redIndex]=color[0];
                     imagedata.data[greenIndex]=color[1];
                     imagedata.data[blueIndex]=color[2];
@@ -130,14 +73,10 @@
         }
     }
     function getColorFromPalette(i){
-        return [Math.max(i,0),Math.max(i,0),Math.max(i,0),255];
+        return [Math.max(i*255,0),Math.max(i*255,0),Math.max(i*255,0),255]; 
     }
     function generateMandelbrotImage(){
         let iterationArray = initIterationArray();
-        /*let numIterationsArray = numIterationsPerPixel(iterationArray);
-        let total = totalValue(numIterationsArray);
-        let hueArray = hue(iterationArray,numIterationsArray,total); 
-        plotMandelToImageData(width,height,hueArray);*/
         plotMandelToImageDataSimple(width,height,iterationArray);
     }
     
