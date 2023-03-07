@@ -82,12 +82,7 @@
 
 <main class="flex flex-col gap-5 p-20 justify-center items-center">
 	<h1 class="text-5xl">Mandelbrot Set.</h1>
-	<canvas
-		bind:this={canvasRef}
-		width="{Math.max(10, width)}px"
-		height="{Math.max(height, 10)}px"
-		class="rounded-xl border border-black"
-	/>
+	<canvas bind:this={canvasRef} width="{width}px" height="{height}px" class="rounded-xl border border-black" />
 
 	<div class="flex flex-row gap-10">
 		<div class="flex flex-col gap-3">
