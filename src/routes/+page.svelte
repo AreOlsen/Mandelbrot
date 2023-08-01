@@ -1,15 +1,20 @@
 <script>
 	let maxIterations = 50;
+	let baseIterations = 50;
 	let width = 800;
 	let height = 600;
+	let xmin = -2.25;
+	let xmax = 0.75;
+	let ymin = -1.5;
+	let ymax = 1.5;
 	let canvasRef;
 
-	function initIterationArray() {
+	function initIterationArray(xmin, xmax, ymin, ymax) {
 		let iterationArray = new Array(width).fill(new Array(height).fill(0));
 		for (let x = 0; x < width; x++) {
 			let xArray = [];
 			for (let y = 0; y < height; y++) {
-				let it = pixelIterationCount(x, y);
+				let it = pixelIterationCount(xmin, xmax, ymin, ymax, x, y);
 				xArray.push(it);
 			}
 			iterationArray[x] = xArray;
@@ -21,9 +26,9 @@
         Mandelbrot is similiar to Julia sets, just that Mandelbrot uses the C as a complex number made of x and y positions of the, in this case, pixel
         while Julia Sets just use some predefined static value. 
     */
-	function pixelIterationCount(px, py) {
-		let x0 = 2.47 * (px / width) - 2.0;
-		let y0 = 2.24 * (py / height) - 1.12;
+	function pixelIterationCount(xmin, xmax, ymin, ymax, px, py) {
+		let x0 = xmin + (xmax - xmin) * (px / width);
+		let y0 = ymin + (ymax - ymin) * (py / height);
 		let x = 0,
 			y = 0;
 		let iteration = 0;
@@ -48,11 +53,11 @@
 	let canvasCtx;
 	onMount(() => {
 		canvasCtx = canvasRef.getContext("2d");
-		generateMandelbrotImage();
+		generateMandelbrotImage(xmin, xmax, ymin, ymax);
 	});
 
 	afterUpdate(() => {
-		generateMandelbrotImage();
+		generateMandelbrotImage(xmin, xmax, ymin, ymax);
 	});
 
 	function plotMandelToImageDataSimple(width, height, itArray) {
@@ -74,43 +79,72 @@
 	function getColorFromPalette(i) {
 		return [Math.max(i * 255, 0), Math.max(i * 255, 0), Math.max(i * 255, 0), 255];
 	}
-	function generateMandelbrotImage() {
-		let iterationArray = initIterationArray();
+	function generateMandelbrotImage(xmin, xmax, ymin, ymax) {
+		let iterationArray = initIterationArray(xmin, xmax, ymin, ymax);
 		plotMandelToImageDataSimple(width, height, iterationArray);
+	}
+
+	function handleMouseClick(event) {
+		event.preventDefault();
+
+		// Calculate the mouse position relative to the canvas
+		const rect = canvasRef.getBoundingClientRect();
+		const mouseX = event.clientX - rect.left;
+		const mouseY = event.clientY - rect.top;
+
+		// Calculate the zoom factor based on the click type (left-click or right-click)
+		const zoomFactor = event.which === 1 ? 0.6 : 1.4;
+
+		// Calculate the new view center based on the click position
+		const centerX = xmin + (xmax - xmin) * (mouseX / width);
+		const centerY = ymin + (ymax - ymin) * (mouseY / height);
+
+		// Adjust the view region accordingly
+		const newWidth = (xmax - xmin) * zoomFactor;
+		const newHeight = (ymax - ymin) * zoomFactor;
+		const newXmin = centerX - newWidth / 2;
+		const newXmax = centerX + newWidth / 2;
+		const newYmin = centerY - newHeight / 2;
+		const newYmax = centerY + newHeight / 2;
+
+		// Update the view region
+		xmin = newXmin;
+		xmax = newXmax;
+		ymin = newYmin;
+		ymax = newYmax;
+
+		maxIterations = Math.max(baseIterations, Math.round(maxIterations / (1.2 * zoomFactor)));
+
+		// Redraw the Mandelbrot set for the new view region
+		generateMandelbrotImage(xmin, xmax, ymin, ymax);
 	}
 </script>
 
 <main class="flex flex-col gap-5 p-20 justify-center items-center">
 	<h1 class="text-5xl">Mandelbrot Set.</h1>
-	<canvas bind:this={canvasRef} width="{width}px" height="{height}px" class="rounded-xl border border-black" />
+	<canvas
+		bind:this={canvasRef}
+		width="{width}px"
+		height="{height}px"
+		class="rounded-xl border border-black"
+		on:mousedown={handleMouseClick}
+		on:contextmenu={(event) => {
+			event.preventDefault();
+		}}
+	/>
 
 	<div class="flex flex-row gap-10">
 		<div class="flex flex-col gap-3">
-			<label class="label" for="maxIterations">Max Iterations (Be careful):</label>
+			<label class="label" for="baseIterations">Minimum Iterations (Be careful):</label>
 			<input
 				class="input"
 				type="number"
 				min="10"
-				name="maxIterations"
-				id="maxIterations"
-				bind:value={maxIterations}
+				name="baseIterations"
+				id="baseIterations"
+				bind:value={baseIterations}
 			/>
 		</div>
-		<div class="flex flex-col gap-3">
-			<label class="label" for="width">Width:</label>
-			<input class="input" type="number" min="10" max="1000" name="width" id="width" bind:value={width} />
-		</div>
-		<div class="flex flex-col gap-3">
-			<label class="label" for="height">Height:</label>
-			<input class="input" type="number" min="10" max="1000" name="height" id="height" bind:value={height} />
-		</div>
-	</div>
-	<div>
-		<h3><b>Implementations to work in:</b></h3>
-		<ul>
-			<li>Zoom in and zoom out</li>
-			<li>Move around on screen</li>
-		</ul>
 	</div>
 	<a href="https://github.com/AreOlsen" class="flex flex-row gap-5"
 		><span>Created By Are Olsen - 01.03.2023 - V.0.1</span><img
